@@ -44,7 +44,7 @@ X_1 = random(gm_1,N);
 %scatter(X_1(:,1),X_1(:,2),100,'.') % Scatter plot with points of size 100
 title('Simulated Data, Class 1','FontSize',20);
 
-%% 2) MAP Decision Rule
+%% 2) Classification with the MAP Decision Rule
 degree = 4; % The feature vector will include all monomials up to the degree'th power.
 
 [w,Phi] = newton_update(X_0,X_1,N,degree);
@@ -57,4 +57,17 @@ legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize
 
 % Classification
 fprintf('Percentage of correct classification of generated samples: %2.2f\n', classify_generated_samples(N,Phi,w));
+
+%% 3) Estimate the conditional probability of incorrect classification for each class
+% From the classification in the previous section, we see that we get about
+% a 80% correct classification. The expected error probability is therefore
+% 20%.
+% The number of samples should be at least 10 times larger than the inverse
+% of the expected error probability, that is N > 10*5
+% Therefore, a good choice is N=200.
+
+% save('class_samples.mat','X_0','X_1');
+
+
+
 
