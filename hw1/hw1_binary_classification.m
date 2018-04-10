@@ -13,10 +13,9 @@ gm_0 = gmdistribution(m,C);
 
 rng('default'); % For reproducibility
 X_0 = random(gm_0,N);
-figure(1), clf; hold on;
-%gmPDF = @(x,y)pdf(gm_0,[x y]);
-%ezcontour(gmPDF);
-scatter(X_0(:,1),X_0(:,2),100,'.') % Scatter plot with points of size 100
+%figure(1), clf; hold on;
+%gmPDF = @(x,y)pdf(gm_0,[x y]); ezcontour(gmPDF);
+%scatter(X_0(:,1),X_0(:,2),100,'.') % Scatter plot with points of size 100
 title('Simulated Data, Class 0','FontSize',20);
 
 % Class 1
@@ -41,55 +40,21 @@ gm_1 = gmdistribution([m_A; m_B], cat(3,C_A,C_B), [pi_A, pi_B]);
 rng('default'); % For reproducibility
 X_1 = random(gm_1,N);
 %figure(2); clf; hold on;
-%gmPDF = @(x,y)pdf(gm_1,[x y]);
-%ezcontour(gmPDF);
-scatter(X_1(:,1),X_1(:,2),100,'.') % Scatter plot with points of size 100
+%gmPDF = @(x,y)pdf(gm_1,[x y]); ezcontour(gmPDF);
+%scatter(X_1(:,1),X_1(:,2),100,'.') % Scatter plot with points of size 100
 title('Simulated Data, Class 1','FontSize',20);
 
 %% 2) MAP Decision Rule
-% $$\hat{t}_{\mathrm{MAP}}(x) = \arg \max_{C_k} \left[ \ln P(x | C_k) + \ln
-% P(C_k) \right]$$
-%
-% Let $\{ C_0, C_1, ..., C_k \}$ be the classes, and let $x$ be a vector of features
+degree = 4; % The feature vector will include all monomials up to the degree'th power.
 
+[w,Phi] = newton_update(X_0,X_1,N,degree);
 
-% Define Phi = [1, x1, x2, x1^2, x2^2, x1*x2]';
+figure('Name','Binary Classification'); clf; hold on;
+scatter(X_0(:,1),X_0(:,2),100,'.');
+scatter(X_1(:,1),X_1(:,2),100,'.');
+plot_decision_boundary(N,degree,w);
+legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
 
-Phi = [ones(1,2*N)                                      % 1*N matrix
-       X_0' X_1';                                       % 2*N matrix
-       X_0.^2' X_1.^2';                                 % 2*N matrix
-       (X_0(:,1).*X_0(:,2))' (X_1(:,1).*X_1(:,2))';     % 1*N matrix
-       ];
-t = [zeros(1,N), ones(1,N)]';
-w = zeros(6,1);
-
-for i = 1:N
-    y = (sigmf(w'*Phi,[1 0]))';
-    R = diag(y.*(1-y));
-    w = w - inv(Phi*R*Phi')*Phi*(y-t);
-end
-
-% Plot the contour where w*phi equals zero
-u = linspace(-5, 5, 200);
-v = linspace(-5, 5, 200);
-
-z = zeros(length(u), length(v));
-for i = 1:length(u)
-    for j = 1:length(v)
-        phi = [1;
-             u(i);
-             v(j);
-             u(i)^2;
-             v(j)^2;
-             u(i)*v(j);
-            ];
-        z(i,j) = w'*phi;
-        %z(i,j) = w'*map_feature(u(i), v(j),2);
-    end
-end
-z = z';
-
-contour(u, v, z, [0,0], 'LineWidth', 2)
-legend('y = 0', 'y = 1', 'Decision boundary')
-
+% Classification
+fprintf('Percentage of correct classification of generated samples: %2.2f\n', classify_generated_samples(N,Phi,w));
 
