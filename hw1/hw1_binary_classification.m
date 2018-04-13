@@ -16,7 +16,7 @@ X_0 = random(gm_0,N);
 %figure(1), clf; hold on;
 %gmPDF = @(x,y)pdf(gm_0,[x y]); ezcontour(gmPDF);
 %scatter(X_0(:,1),X_0(:,2),100,'.') % Scatter plot with points of size 100
-title('Simulated Data, Class 0','FontSize',20);
+%title('Simulated Data, Class 0','FontSize',20);
 
 % Class 1
 % Component A:
@@ -42,10 +42,63 @@ X_1 = random(gm_1,N);
 %figure(2); clf; hold on;
 %gmPDF = @(x,y)pdf(gm_1,[x y]); ezcontour(gmPDF);
 %scatter(X_1(:,1),X_1(:,2),100,'.') % Scatter plot with points of size 100
-title('Simulated Data, Class 1','FontSize',20);
+%title('Simulated Data, Class 1','FontSize',20);
+
+save parameters.mat m C pi_A m_A C_A pi_B m_B C_B
 
 %% 2) Classification with the MAP Decision Rule
-degree = 4; % The feature vector will include all monomials up to the degree'th power.
+X = [X_0; X_1];
+t = classify_with_map(X,2*N);
+
+u = linspace(-5, 5, N);
+v = linspace(-5, 5, N);
+
+z = zeros(length(u), length(v));
+%for i = 1:length(u)
+%    for j = 1:length(v)
+%        class_0_probability = calculate_probability([u(i) v(j)],1,0);
+%        class_1_probability = calculate_probability([u(i) v(j)],1,1);
+%        z(i,j) = class_1_probability - class_0_probability;
+%    end
+%end
+
+for i = 1:length(u)
+    for j = 1:length(v)
+        x(j,:) = [u(i) v(j)];
+    end
+    class_0_probability = calculate_probability(x,1,0);
+	class_1_probability = calculate_probability(x,1,1);
+    z(:,j) = class_1_probability - class_0_probability;
+end
+
+figure('Name','Binary Classification'); clf; hold on;
+scatter(X_0(:,1),X_0(:,2),100,'.');
+scatter(X_1(:,1),X_1(:,2),100,'.');
+contour(u,v,z,[0,0],'LineWidth',2);
+legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+
+%%
+class = 0;
+
+load parameters.mat
+
+m = m'; m_A = m_A'; m_B = m_B'; % Defined differently in the samples generation
+
+d = 2;
+p = zeros(1,2*N);
+for i = 1:2*N
+    x = X(1,:)';
+    if class == 0
+        p(i) = 1/((2*pi)^(d/2) * det(C)^(1/2)) * exp(-(1/2)*(x-m)'*inv(C)*(x-m));
+    elseif class == 1
+        p_A = 1/((2*pi)^(d/2) * det(C_A)^(1/2)) * exp(-(1/2)*(x-m)'*inv(C_A)*(x-m));
+        p_B = 1/((2*pi)^(d/2) * det(C_B)^(1/2)) * exp(-(1/2)*(x-m)'*inv(C_B)*(x-m));
+        p(i) = pi_A*p_A + pi_B*p_B;
+    end
+end
+    
+%% 7) Non-kernelized logistic regression
+degree = 3; % The feature vector will include all monomials up to the degree'th power.
 
 [w,Phi] = newton_update(X_0,X_1,N,degree);
 
