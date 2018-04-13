@@ -70,6 +70,71 @@ scatter(X_1(1,:),X_1(2,:),100,'.');
 contour(u,v,z,[0,0],'LineWidth',2);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
 
+
+%% 3) Estimate the conditional probability of incorrect classification for each class
+% From the classification in the previous section, we see that we get about
+% a 80% correct classification. The expected error probability is therefore
+% 20%.
+% The number of samples should be at least 10 times larger than the inverse
+% of the expected error probability, that is N > 10*5
+% Therefore, a good choice is N=200.
+
+% save('class_samples.mat','X_0','X_1');
+
+%% 4)
+N = 200; % Define the old N above to be N/2 (half of this new N)
+l = 10^-2;
+lambda = 0;
+
+X = [X_0 X_1];
+K = zeros(N,2);
+for i = 1:N
+    for j = 1:N
+        K(i,j) = exp(-norm(X(:,i)-X(:,j))^2/(2*l^2));
+    end
+end
+
+t = [zeros(1,N/2), ones(1,N/2)]';
+
+a = zeros(N,1);
+for i = 1:10
+    y = (sigmf(a'*K,[1 0]))';
+    R = diag(y.*(1-y));
+    E_map_grad = K * (y - t + lambda*a);
+    H = K*R*K + lambda*K;
+    
+    a_old = a;
+    a = a - H\E_map_grad;
+    
+    if abs(a - a_old) < 0.01
+        break;
+    end
+end
+
+%% 5) Plot training data points and show the decision boundaries
+u = linspace(-5, 5, N);
+v = linspace(-5, 5, N);
+z = zeros(N,1);
+
+X = [X_0 X_1];
+K = zeros(N,2);
+for i = 1:N
+    for j = 1:N
+        x = [u(i) v(j)]';
+        K(i,j) = exp(-norm(X(:,i)-x)^2/(2*l^2));
+    end
+end
+
+for i = 1:N
+    z(:,i) = a'*K(:,i);
+end
+
+figure('Name','Binary Classification'); clf; hold on;
+scatter(X_0(1,:),X_0(2,:),100,'.');
+scatter(X_1(1,:),X_1(2,:),100,'.');
+contour(u,v,z,[0,0],'LineWidth',2);
+legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+
 %% 7) Non-kernelized logistic regression
 degree = 3; % The feature vector will include all monomials up to the degree'th power.
 
@@ -83,16 +148,6 @@ legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize
 
 % Classification
 fprintf('Percentage of correct classification of generated samples: %2.2f\n', classify_generated_samples(N,Phi,w));
-
-%% 3) Estimate the conditional probability of incorrect classification for each class
-% From the classification in the previous section, we see that we get about
-% a 80% correct classification. The expected error probability is therefore
-% 20%.
-% The number of samples should be at least 10 times larger than the inverse
-% of the expected error probability, that is N > 10*5
-% Therefore, a good choice is N=200.
-
-% save('class_samples.mat','X_0','X_1');
 
 
 
