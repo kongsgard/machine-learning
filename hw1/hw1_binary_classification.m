@@ -16,7 +16,7 @@ X_0 = random(gm_0,N);
 %figure(1), clf; hold on;
 %gmPDF = @(x,y)pdf(gm_0,[x y]); ezcontour(gmPDF);
 %scatter(X_0(:,1),X_0(:,2),100,'.') % Scatter plot with points of size 100
-title('Simulated Data, Class 0','FontSize',20);
+%title('Simulated Data, Class 0','FontSize',20);
 
 % Class 1
 % Component A:
@@ -42,11 +42,19 @@ X_1 = random(gm_1,N);
 %figure(2); clf; hold on;
 %gmPDF = @(x,y)pdf(gm_1,[x y]); ezcontour(gmPDF);
 %scatter(X_1(:,1),X_1(:,2),100,'.') % Scatter plot with points of size 100
-title('Simulated Data, Class 1','FontSize',20);
+%title('Simulated Data, Class 1','FontSize',20);
 
 %% 2) Classification with the MAP Decision Rule
-degree = 4; % The feature vector will include all monomials up to the degree'th power.
 
+[~,d] = size(X_0);
+class_0_probability = 1/((2*pi)^(d/2) * det(C)^(1/2)) * exp(-(1/2)*(X_0-m)'*C\(X_0-m));
+
+%class_1_probability = ;
+
+%% 7) Non-kernelized logistic regression
+degree = 3; % The feature vector will include all monomials up to the degree'th power.
+
+Phi = map_feature(X_0,X_1,degree);
 [w,Phi] = newton_update(X_0,X_1,N,degree);
 
 figure('Name','Binary Classification'); clf; hold on;
@@ -68,6 +76,48 @@ fprintf('Percentage of correct classification of generated samples: %2.2f\n', cl
 
 % save('class_samples.mat','X_0','X_1');
 
+%% 4)
+N = 200; % Define the old N above to be N/2 (half of this new N)
+l = 10^-2;
+lambda = 0;
+
+X = [X_0; X_1];
+K = zeros(N,2);
+for i = 1:N
+    for j = 1:N
+        K(i,j) = exp(-norm(X(i,:)-X(j,:))^2/(2*l^2));
+    end
+end
+
+t = [zeros(1,N/2), ones(1,N/2)]';
+
+a = zeros(N,1);
+
+for i = 1:10
+    y = (sigmf(a'*K,[1 0]))';
+    R = diag(y.*(1-y));
+    E_map_grad = K * (y - t + lambda*a);
+    H = K*R*K + lambda*K;
+    
+    a_old = a;
+    a = a - H\E_map_grad;
+    
+    if abs(a - a_old) < 0.01
+        break;
+    end
+end
+
+z = zeros(N,1);
+
+for i = 1:N
+    z(i) = a'*K(:,i);
+end
+
+x1 = linspace(-5, 5, N);
+x2 = linspace(-5, 5, N);
+
+
+contour(x1,x2,z,[0,0],'LineWidth',2);
 
 
 

@@ -11,11 +11,12 @@ function [w,Phi] = newton_update(X_0,X_1,N,degree)
 
     [n_monomials,~] = size(Phi);
     w = zeros(n_monomials,1);
-
+    
     for i = 1:N
         y = (sigmf(w'*Phi,[1 0]))';
         R = diag(y.*(1-y));
         w = w - inv(Phi*R*Phi')*Phi*(y-t);
     end
+    Phi = Phi';
 end
 

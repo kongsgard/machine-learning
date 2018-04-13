@@ -22,5 +22,4 @@ function phi = map_feature(feat1, feat2, degree)
             phi(:, end+1) = (x1.^(i-j)).*(x2.^j);
         end
     end
-    phi = phi';
 end
