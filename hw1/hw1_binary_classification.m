@@ -3,20 +3,20 @@
 N = 200; % Number of samples
 
 % Class 0
-m        = [0, 0]';
+m_0      = [0, 0]';
 
 theta    = 0;
 lambda_1 = 2; u_1 = [cos(theta), sin(theta)]'; lambda_2 = 1; u_2 = [-sin(theta), cos(theta)]';
-C        = lambda_1*(u_1*u_1') + lambda_2*(u_2*u_2');
+C_0      = lambda_1*(u_1*u_1') + lambda_2*(u_2*u_2');
 
-gm_0 = gmdistribution(m',C);
+gm_0 = gmdistribution(m_0',C_0);
 
 rng('default'); % For reproducibility
 X_0 = random(gm_0,N)';
-figure(1), clf; hold on;
+%figure(1), clf; hold on;
 %gmPDF = @(x,y)pdf(gm_0,[x y]); ezcontour(gmPDF);
-scatter(X_0(1,:),X_0(2,:),100,'.') % Scatter plot with points of size 100
-title('Simulated Data, Class 0','FontSize',20);
+%scatter(X_0(1,:),X_0(2,:),100,'.') % Scatter plot with points of size 100
+%title('Simulated Data, Class 0','FontSize',20);
 
 % Class 1
 % Component A:
@@ -41,10 +41,36 @@ rng('default'); % For reproducibility
 X_1 = random(gm_1,N)';
 %figure(2); clf; hold on;
 %gmPDF = @(x,y)pdf(gm_1,[x y]); ezcontour(gmPDF);
-scatter(X_1(1,:),X_1(2,:),100,'.') % Scatter plot with points of size 100
-title('Simulated Data, Class 1','FontSize',20);
+%scatter(X_1(1,:),X_1(2,:),100,'.') % Scatter plot with points of size 100
+%title('Simulated Data, Class 1','FontSize',20);
+
+save parameters.mat m_0 C_0 pi_A m_A C_A pi_B m_B C_B
 
 %% 2) Classification with the MAP Decision Rule
+X = [X_0 X_1];
+t = classify_with_map(X);
+
+u = linspace(-5, 5, N);
+v = linspace(-5, 5, N);
+
+z = zeros(length(u), length(v));
+
+for i = 1:length(u)
+    for j = 1:length(v)
+        x(:,j) = [u(i) v(j)]';
+    end
+    class_0_probability = calculate_probability(x,0);
+	class_1_probability = calculate_probability(x,1);
+    z(:,i) = class_1_probability - class_0_probability;
+end
+
+figure('Name','Binary Classification'); clf; hold on;
+scatter(X_0(1,:),X_0(2,:),100,'.');
+scatter(X_1(1,:),X_1(2,:),100,'.');
+contour(u,v,z,[0,0],'LineWidth',2);
+legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+
+%% 7) Non-kernelized logistic regression
 degree = 3; % The feature vector will include all monomials up to the degree'th power.
 
 [w,Phi] = newton_update([X_0 X_1],N,degree);
