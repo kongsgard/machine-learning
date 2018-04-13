@@ -8,7 +8,7 @@ function plot_decision_boundary(N,degree,w)
     z = zeros(length(x1), length(x2));
     for i = 1:length(x1)
         for j = 1:length(x2)
-            z(i,j) = w'*map_feature(x1(i),x2(j),degree);
+            z(i,j) = w'*map_feature([x1(i); x2(j)],degree);
         end
     end
     z = z';

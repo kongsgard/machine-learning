@@ -45,13 +45,13 @@ scatter(X_1(1,:),X_1(2,:),100,'.') % Scatter plot with points of size 100
 title('Simulated Data, Class 1','FontSize',20);
 
 %% 2) Classification with the MAP Decision Rule
-degree = 4; % The feature vector will include all monomials up to the degree'th power.
+degree = 3; % The feature vector will include all monomials up to the degree'th power.
 
-[w,Phi] = newton_update(X_0,X_1,N,degree);
+[w,Phi] = newton_update([X_0 X_1],N,degree);
 
 figure('Name','Binary Classification'); clf; hold on;
-scatter(X_0(:,1),X_0(:,2),100,'.');
-scatter(X_1(:,1),X_1(:,2),100,'.');
+scatter(X_0(1,:),X_0(2,:),100,'.');
+scatter(X_1(1,:),X_1(2,:),100,'.');
 plot_decision_boundary(N,degree,w);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
 

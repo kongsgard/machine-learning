@@ -1,4 +1,4 @@
-function phi = map_feature(feat1, feat2, degree)
+function phi = map_feature(feat, degree)
 % MAP_FEATURE    Feature mapping function
 %
 %   map_feature(feat1, feat2) maps the two input features
@@ -7,20 +7,18 @@ function phi = map_feature(feat1, feat2, degree)
 %
 %   Inputs feat1, feat2 must be the same size
 
-    [m,~] = size(feat1);
+    [m,~] = size(feat);
     if m ~= 1
-        x1 = [feat1(:,1); feat2(:,1)];
-        x2 = [feat1(:,2); feat2(:,2)];
+        x1 = feat(1,:);
+        x2 = feat(2,:);
     else
-        x1 = feat1;
-        x2 = feat2;
+        x1 = feat;
     end
-      
-    phi = ones(size(x1(:,1)));
+    
+    phi = ones(size(x1(1,:)));
     for i = 1:degree
         for j = 0:i
-            phi(:, end+1) = (x1.^(i-j)).*(x2.^j);
+            phi(end+1,:) = (x1.^(i-j)).*(x2.^j);
         end
     end
-    phi = phi';
 end

@@ -1,11 +1,11 @@
-function [w,Phi] = newton_update(X_0,X_1,N,degree)
+function [w,Phi] = newton_update(X,N,degree)
 %NEWTON_UPDATE Iteratively updates the feature vector w using the newton
 %update
 %   If equal priors is assumed, this function can be used as an
 %   implementation of the MAP rule.
 
     % Define Phi = [1, x1, x2, x1^2, x1*x2, x2^2, ...]';
-    Phi = map_feature(X_0,X_1,degree);
+    Phi = map_feature(X,degree);
     
     t = [zeros(1,N), ones(1,N)]';
 
