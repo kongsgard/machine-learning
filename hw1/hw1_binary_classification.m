@@ -3,45 +3,45 @@
 N = 200; % Number of samples
 
 % Class 0
-m        = [0, 0];
+m        = [0, 0]';
 
 theta    = 0;
 lambda_1 = 2; u_1 = [cos(theta), sin(theta)]'; lambda_2 = 1; u_2 = [-sin(theta), cos(theta)]';
 C        = lambda_1*(u_1*u_1') + lambda_2*(u_2*u_2');
 
-gm_0 = gmdistribution(m,C);
+gm_0 = gmdistribution(m',C);
 
 rng('default'); % For reproducibility
-X_0 = random(gm_0,N);
-%figure(1), clf; hold on;
+X_0 = random(gm_0,N)';
+figure(1), clf; hold on;
 %gmPDF = @(x,y)pdf(gm_0,[x y]); ezcontour(gmPDF);
-%scatter(X_0(:,1),X_0(:,2),100,'.') % Scatter plot with points of size 100
+scatter(X_0(1,:),X_0(2,:),100,'.') % Scatter plot with points of size 100
 title('Simulated Data, Class 0','FontSize',20);
 
 % Class 1
 % Component A:
 pi_A     = 1/3;
-m_A      = [-2, 1];
+m_A      = [-2, 1]';
 
 theta    = -3/4 * pi;
 lambda_1 = 2; u_1 = [cos(theta), sin(theta)]'; lambda_2 = 1/4; u_2 = [-sin(theta), cos(theta)]';
 C_A      = lambda_1*(u_1*u_1') + lambda_2*(u_2*u_2');
 % Component B:
 pi_B     = 2/3;
-m_B      = [3, 2];
+m_B      = [3, 2]';
 
 theta    = pi/4;
 lambda_1 = 3; u_1 = [cos(theta), sin(theta)]'; lambda_2 = 1; u_2 = [-sin(theta), cos(theta)]';
 C_B      = lambda_1*(u_1*u_1') + lambda_2*(u_2*u_2');
 
 % Gaussian Mixture of Component A and Component B
-gm_1 = gmdistribution([m_A; m_B], cat(3,C_A,C_B), [pi_A, pi_B]);
+gm_1 = gmdistribution([m_A'; m_B'], cat(3,C_A,C_B), [pi_A, pi_B]);
 
 rng('default'); % For reproducibility
-X_1 = random(gm_1,N);
+X_1 = random(gm_1,N)';
 %figure(2); clf; hold on;
 %gmPDF = @(x,y)pdf(gm_1,[x y]); ezcontour(gmPDF);
-%scatter(X_1(:,1),X_1(:,2),100,'.') % Scatter plot with points of size 100
+scatter(X_1(1,:),X_1(2,:),100,'.') % Scatter plot with points of size 100
 title('Simulated Data, Class 1','FontSize',20);
 
 %% 2) Classification with the MAP Decision Rule
