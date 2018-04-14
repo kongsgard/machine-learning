@@ -1,6 +1,6 @@
 %% 1) Generate 2D synthetic data for binary classification
 %https://www.mathworks.com/help/stats/simulate-data-from-a-gaussian-mixture-model.html
-N = 100; % Number of samples
+N = 800; % Number of samples
 
 % Class 0
 m_0      = [0, 0]';
@@ -82,58 +82,71 @@ legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize
 % save('class_samples.mat','X_0','X_1');
 
 %% 4) Kernelized logistic regression
-N = 200; % Define the old N above to be N/2 (half of this new N)
-l = 10^-1;
-lambda = 1;
+N = 20;
+
+%rng('default'); % For reproducibility
+X_0 = random(gm_0,N/2)';
+X_1 = random(gm_1,N/2)';
+
+l = 2.7; %2.7
+lambda = 10^-3;
 
 X = [X_0 X_1];
+
+%N = 10;
+%X = [1 2; 1.5 3; 2 4; 2.5 5; 9 10; 11 12; 13 14; 15 16; 17 18; 20 20]';
+
 K = zeros(N,2);
 for i = 1:N
     for j = 1:N
-        K(i,j) = exp(-norm(X(:,i)-X(:,j))^2/(2*l^2));
+        K(i,j) = exp(-(norm(X(:,i)-X(:,j)))^2/(2*l^2));
     end
 end
 
 t = [zeros(1,N/2), ones(1,N/2)]';
 
-a = zeros(N,1);
-for i = 1:10
+a = randn(N,1);
+for i = 1:100
     y = (sigmf(a'*K,[1 0]))';
     R = diag(y.*(1-y));
     E_map_grad = K * (y - t + lambda*a);
     H = K*R*K + lambda*K;
     
     a_old = a;
-    a = a - H\E_map_grad;
+    a = a - inv(H)*E_map_grad;
     
     if abs(a - a_old) < 0.01
         fprintf('Newton iterations converged in %d steps.\n',i);
         break;
     end
-end
-
-%% 5) Plot training data points and show the decision boundaries
-u = linspace(-5, 5, N);
-v = linspace(-5, 5, N);
-z = zeros(N,N);
-
-X = [X_0 X_1];
-K = zeros(N,2);
-for i = 1:N
-    for j = 1:N
-        x = [u(i) v(j)]';
-        K(i,j) = exp(-norm(X(:,i)-x)^2/(2*l^2));
+    if i == 100
+       fprintf('Reached end of loop\n');
     end
 end
 
+%% 5) Plot training data points and show the decision boundaries
+u = linspace(-10, 10, N);
+v = linspace(-10, 10, N);
+z = zeros(N,N);
+
+K = zeros(N,1);
 for i = 1:N
-    z(:,i) = a'*K(:,i);
+    for j = 1:N
+        x = [u(i) v(j)]';
+        for k = 1:length(X)
+            K(k) = exp(-norm(X(:,k)-x)^2/(2*l^2));
+        end
+        z(i,j) = a'*K;
+    end
 end
 
 figure('Name','Binary Classification'); clf; hold on;
-scatter(X_0(1,:),X_0(2,:),100,'.');
-scatter(X_1(1,:),X_1(2,:),100,'.');
-contour(u,v,z,[0,0],'LineWidth',2);
+%scatter(X_0(1,:),X_0(2,:),100,'.');
+%scatter(X_1(1,:),X_1(2,:),100,'.');
+
+scatter(X(1,1:end/2),X(2,1:end/2),100,'.');
+scatter(X(1,end/2+1:end),X(2,end/2+1:end),100,'.');
+contour(u,v,z,[0 0],'LineWidth',2);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
 
 %% 7) Non-kernelized logistic regression
