@@ -1,6 +1,6 @@
 %% 1) Generate 2D synthetic data for binary classification
 %https://www.mathworks.com/help/stats/simulate-data-from-a-gaussian-mixture-model.html
-N = 800; % Number of samples
+N = 200; % Number of samples
 
 % Class 0
 m_0      = [0, 0]';
@@ -77,61 +77,67 @@ legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize
 % 20%.
 % The number of samples should be at least 10 times larger than the inverse
 % of the expected error probability, that is N > 10*5
-% Therefore, a good choice is N=200.
+% Therefore, a good choice is N=50.
 
 % save('class_samples.mat','X_0','X_1');
 
 %% 4) Kernelized logistic regression
-N = 20;
+N = 100;
+a_prev = randn(N,1);
+for iteration = 1:10
+    %rng('default'); % For reproducibility
+    X_0 = random(gm_0,N/2)';
+    X_1 = random(gm_1,N/2)';
 
-%rng('default'); % For reproducibility
-X_0 = random(gm_0,N/2)';
-X_1 = random(gm_1,N/2)';
+    l = 0.5; %2.7
+    lambda = 0.001; % 10^-3;
 
-l = 2.7; %2.7
-lambda = 10^-3;
+    X = [X_0 X_1];
 
-X = [X_0 X_1];
+    %N = 10;
+    %X = [1 2; 1.5 3; 2 4; 2.5 5; 9 10; 11 12; 13 14; 15 16; 17 18; 20 20]';
 
-%N = 10;
-%X = [1 2; 1.5 3; 2 4; 2.5 5; 9 10; 11 12; 13 14; 15 16; 17 18; 20 20]';
+    K = zeros(N,2);
+    for i = 1:N
+        for j = 1:N
+            K(i,j) = exp(-(norm(X(:,i)-X(:,j)))^2/(2*l^2));
+        end
+    end
 
-K = zeros(N,2);
-for i = 1:N
-    for j = 1:N
-        K(i,j) = exp(-(norm(X(:,i)-X(:,j)))^2/(2*l^2));
+    t = [zeros(1,N/2), ones(1,N/2)]';
+
+    a = a_prev;
+    for i = 1:100
+        y = (sigmf(a'*K,[1 0]))';
+        R = diag(y.*(1-y));
+        E_map_grad = K * (y - t + lambda*a);
+        H = K*R*K + lambda*K;
+
+        a_old = a;
+        a = a - inv(H)*E_map_grad;
+
+        if abs(a - a_old) < 0.01
+            %fprintf('Newton iterations converged in %d steps.\n',i);
+            a_prev = a;
+            break;
+        end
+        if i == 100
+           %fprintf('Reached end of loop\n');
+        end
     end
 end
 
-t = [zeros(1,N/2), ones(1,N/2)]';
-
-a = randn(N,1);
-for i = 1:100
-    y = (sigmf(a'*K,[1 0]))';
-    R = diag(y.*(1-y));
-    E_map_grad = K * (y - t + lambda*a);
-    H = K*R*K + lambda*K;
-    
-    a_old = a;
-    a = a - inv(H)*E_map_grad;
-    
-    if abs(a - a_old) < 0.01
-        fprintf('Newton iterations converged in %d steps.\n',i);
-        break;
-    end
-    if i == 100
-       fprintf('Reached end of loop\n');
-    end
-end
+a = a_prev;
 
 %% 5) Plot training data points and show the decision boundaries
-u = linspace(-10, 10, N);
-v = linspace(-10, 10, N);
-z = zeros(N,N);
+res = 200;
+u = linspace(-10,10,res);
+v = linspace(-10,10,res);
+z = zeros(res,res);
 
 K = zeros(N,1);
-for i = 1:N
-    for j = 1:N
+for i = 1:res
+    for j = 1:res
         x = [u(i) v(j)]';
         for k = 1:length(X)
             K(k) = exp(-norm(X(:,k)-x)^2/(2*l^2));
@@ -141,16 +147,54 @@ for i = 1:N
 end
 
 figure('Name','Binary Classification'); clf; hold on;
-%scatter(X_0(1,:),X_0(2,:),100,'.');
-%scatter(X_1(1,:),X_1(2,:),100,'.');
-
 scatter(X(1,1:end/2),X(2,1:end/2),100,'.');
 scatter(X(1,end/2+1:end),X(2,end/2+1:end),100,'.');
 contour(u,v,z,[0 0],'LineWidth',2);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
 
+%% 6) Conditional probability of incorrect classification for each class
+load class_samples.mat
+
+% Check which samples were correctly classified
+c0_correct = 0;
+c1_correct = 0;
+
+X_test = [X_0 X_1];
+
+N_test = size(X_test,2);
+K_test = zeros(N_test,1);
+for i = 1:N_test
+    for k = 1:length(X)
+        K_test(k) = exp(-norm(X(:,k)-X_test(:,i))^2/(2*l^2));
+    end
+    z_test = a'*K_test;
+    if (i <= N_test/2 && z_test < 0)
+        c0_correct = c0_correct + 1; 
+    elseif (i > N_test/2 && z_test > 0)
+        c1_correct = c1_correct + 1; 
+    end
+end
+
+c0_incorrect_probability = (N_test/2 - c0_correct)/(N_test/2);
+c1_incorrect_probability = (N_test/2 - c1_correct)/(N_test/2);
+
+fprintf('Probability of incorrect classification:\n');
+fprintf('Class 0: %2.2f\n', c0_incorrect_probability);
+fprintf('Class 1: %2.2f\n', c1_incorrect_probability);
+
+figure('Name','Sample data with decision boundary'); clf; hold on;
+scatter(X(1,1:end/2),X(2,1:end/2),200,'.');
+scatter(X(1,end/2+1:end),X(2,end/2+1:end),200,'.');
+contour(u,v,z,[0 0],'LineWidth',2);
+legend({'$t = 0.26$','$t = 0.56$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+
+
 %% 7) Non-kernelized logistic regression
 degree = 3; % The feature vector will include all monomials up to the degree'th power.
+
+N = 200; % Number of samples
+X_0 = random(gm_0,N)';
+X_1 = random(gm_1,N)';
 
 [w,Phi] = newton_update([X_0 X_1],N,degree);
 
