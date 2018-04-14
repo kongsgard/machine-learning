@@ -1,6 +1,6 @@
 %% 1) Generate 2D synthetic data for binary classification
 %https://www.mathworks.com/help/stats/simulate-data-from-a-gaussian-mixture-model.html
-N = 200; % Number of samples
+N = 100; % Number of samples
 
 % Class 0
 m_0      = [0, 0]';
@@ -81,10 +81,10 @@ legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize
 
 % save('class_samples.mat','X_0','X_1');
 
-%% 4)
+%% 4) Kernelized logistic regression
 N = 200; % Define the old N above to be N/2 (half of this new N)
-l = 10^-2;
-lambda = 0;
+l = 10^-1;
+lambda = 1;
 
 X = [X_0 X_1];
 K = zeros(N,2);
@@ -107,6 +107,7 @@ for i = 1:10
     a = a - H\E_map_grad;
     
     if abs(a - a_old) < 0.01
+        fprintf('Newton iterations converged in %d steps.\n',i);
         break;
     end
 end
@@ -114,7 +115,7 @@ end
 %% 5) Plot training data points and show the decision boundaries
 u = linspace(-5, 5, N);
 v = linspace(-5, 5, N);
-z = zeros(N,1);
+z = zeros(N,N);
 
 X = [X_0 X_1];
 K = zeros(N,2);
@@ -147,8 +148,9 @@ plot_decision_boundary(N,degree,w);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
 
 % Classification
-fprintf('Percentage of correct classification of generated samples: %2.2f\n', classify_generated_samples(N,Phi,w));
+fprintf('Percentage of correct classification of generated samples: %2.2f\n', classify_generated_samples_from_feature_vector(N,Phi,w));
 
+% No overfitting observed
 
 
 

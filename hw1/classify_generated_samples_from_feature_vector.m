@@ -1,4 +1,4 @@
-function correct_classification_percentage = classify_generated_samples(N,Phi,w)
+function correct_classification_percentage = classify_generated_samples_from_feature_vector(N,Phi,w)
 %CLASSIFY_GENERATED_SAMPLES Find the percentage of correct classifications
 %of the generated samples using the feature vector w
     
