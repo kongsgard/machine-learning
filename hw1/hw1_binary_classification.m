@@ -13,10 +13,10 @@ gm_0 = gmdistribution(m_0',C_0);
 
 rng('default'); % For reproducibility
 X_0 = random(gm_0,N)';
-%figure(1), clf; hold on;
+figure('Name','Sample data for class 0'), clf; hold on;
 %gmPDF = @(x,y)pdf(gm_0,[x y]); ezcontour(gmPDF);
-%scatter(X_0(1,:),X_0(2,:),100,'.') % Scatter plot with points of size 100
-%title('Simulated Data, Class 0','FontSize',20);
+scatter(X_0(1,:),X_0(2,:),100,'.') % Scatter plot with points of size 100
+title('Simulated Data, Class 0','FontSize',20);
 
 % Class 1
 % Component A:
@@ -39,10 +39,10 @@ gm_1 = gmdistribution([m_A'; m_B'], cat(3,C_A,C_B), [pi_A, pi_B]);
 
 rng('default'); % For reproducibility
 X_1 = random(gm_1,N)';
-%figure(2); clf; hold on;
+figure('Name','Sample data for class 1'); clf; hold on;
 %gmPDF = @(x,y)pdf(gm_1,[x y]); ezcontour(gmPDF);
-%scatter(X_1(1,:),X_1(2,:),100,'.') % Scatter plot with points of size 100
-%title('Simulated Data, Class 1','FontSize',20);
+scatter(X_1(1,:),X_1(2,:),100,'.') % Scatter plot with points of size 100
+title('Simulated Data, Class 1','FontSize',20);
 
 save parameters.mat m_0 C_0 pi_A m_A C_A pi_B m_B C_B
 
@@ -64,20 +64,44 @@ for i = 1:length(u)
     z(:,i) = class_1_probability - class_0_probability;
 end
 
-figure('Name','Binary Classification'); clf; hold on;
+figure('Name','Binary Classification, MAP Decision Rule'); clf; hold on;
 scatter(X_0(1,:),X_0(2,:),100,'.');
 scatter(X_1(1,:),X_1(2,:),100,'.');
 contour(u,v,z,[0,0],'LineWidth',2);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+title('Binary Classification with the MAP Decision Rule','FontSize',20);
 
+% The decision boundary is computed using a contour plot in the range [0,0]
 
 %% 3) Estimate the conditional probability of incorrect classification for each class
-% From the classification in the previous section, we see that we get about
-% a 80% correct classification. The expected error probability is therefore
-% 20%.
+c0_correct = 0;
+c1_correct = 0;
+
+X = [X_0 X_1];
+N_test = size(X,2);
+
+for i = 1:N_test
+    if (i <= N_test/2 && t(i) == 0)
+        c0_correct = c0_correct + 1; 
+    elseif (i > N_test/2 && t(i) == 1)
+        c1_correct = c1_correct + 1; 
+    end
+end
+
+c0_incorrect_probability = (N_test/2 - c0_correct)/(N_test/2);
+c1_incorrect_probability = (N_test/2 - c1_correct)/(N_test/2);
+
+fprintf('MAP Decision Rule:\n');
+fprintf('\tProbability of incorrect classification:\n');
+fprintf('\tClass 0: %2.2f\n', c0_incorrect_probability);
+fprintf('\tClass 1: %2.2f\n', c1_incorrect_probability);
+
+% From the classification with the MAP decision rule, we see that we get about
+% 85% correct classification. The expected error probability is therefore
+% 15%.
 % The number of samples should be at least 10 times larger than the inverse
 % of the expected error probability, that is N > 10*5
-% Therefore, a good choice is N=50.
+% Therefore, a good choice is N=100.
 
 % save('class_samples.mat','X_0','X_1');
 
@@ -151,6 +175,7 @@ scatter(X(1,1:end/2),X(2,1:end/2),100,'.');
 scatter(X(1,end/2+1:end),X(2,end/2+1:end),100,'.');
 contour(u,v,z,[0 0],'LineWidth',2);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+title('Binary Classification using Kernelized Logistic Regression','FontSize',20);
 
 %% 6) Conditional probability of incorrect classification for each class
 load class_samples.mat
@@ -169,7 +194,7 @@ for i = 1:N_test
     end
     z_test = a'*K_test;
     if (i <= N_test/2 && z_test < 0)
-        c0_correct = c0_correct + 1; 
+        c0_correct = c0_correct + 1;
     elseif (i > N_test/2 && z_test > 0)
         c1_correct = c1_correct + 1; 
     end
@@ -178,16 +203,12 @@ end
 c0_incorrect_probability = (N_test/2 - c0_correct)/(N_test/2);
 c1_incorrect_probability = (N_test/2 - c1_correct)/(N_test/2);
 
-fprintf('Probability of incorrect classification:\n');
-fprintf('Class 0: %2.2f\n', c0_incorrect_probability);
-fprintf('Class 1: %2.2f\n', c1_incorrect_probability);
+fprintf('Kernelized Logistic Regression:\n');
+fprintf('\tProbability of incorrect classification:\n');
+fprintf('\tClass 0: %2.2f\n', c0_incorrect_probability);
+fprintf('\tClass 1: %2.2f\n', c1_incorrect_probability);
 
-figure('Name','Sample data with decision boundary'); clf; hold on;
-scatter(X(1,1:end/2),X(2,1:end/2),200,'.');
-scatter(X(1,end/2+1:end),X(2,end/2+1:end),200,'.');
-contour(u,v,z,[0 0],'LineWidth',2);
-legend({'$t = 0.26$','$t = 0.56$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
-
+% The probability of incorrect classification here is higher than when the MAP decision rule is used.
 
 %% 7) Non-kernelized logistic regression
 degree = 3; % The feature vector will include all monomials up to the degree'th power.
@@ -196,16 +217,25 @@ N = 200; % Number of samples
 X_0 = random(gm_0,N)';
 X_1 = random(gm_1,N)';
 
-[w,Phi] = newton_update([X_0 X_1],N,degree);
+[w,~] = newton_update([X_0 X_1],N,degree);
 
-figure('Name','Binary Classification'); clf; hold on;
+figure('Name','Binary Classification, Non-kernelized Logistic Regression'); clf; hold on;
 scatter(X_0(1,:),X_0(2,:),100,'.');
 scatter(X_1(1,:),X_1(2,:),100,'.');
 plot_decision_boundary(N,degree,w);
 legend({'$t = 0$','$t = 1$','Decision Boundary'},'Interpreter','Latex','FontSize',20,'Location','SouthEast');
+title('Binary Classification using Non-kernelized Logistic Regression','FontSize',20);
 
 % Classification
-fprintf('Percentage of correct classification of generated samples: %2.2f\n', classify_generated_samples_from_feature_vector(N,Phi,w));
+load class_samples.mat
+X = [X_0, X_1];
+Phi = map_feature(X,degree);
+N = size(X,2);
+[c0_incorrect_probability,c1_incorrect_probability] = classify_generated_samples_from_feature_vector(N,Phi,w);
+fprintf('Non-kernelized Logistic Regression:\n');
+fprintf('\tProbability of incorrect classification:\n');
+fprintf('\tClass 0: %2.2f\n', c0_incorrect_probability);
+fprintf('\tClass 1: %2.2f\n', c1_incorrect_probability);
 
 % No overfitting observed
 
