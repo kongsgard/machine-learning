@@ -7,7 +7,7 @@ function [c0_incorrect_probability, c1_incorrect_probability] = classify_generat
 
     for i = 1:N
         z = w'*Phi(:,i);
-        if (i <= N && z < 0)
+        if (i <= N/2 && z < 0)
             % Sample from Class 0 classified as Class 0
             c0_correct = c0_correct + 1;
         end
